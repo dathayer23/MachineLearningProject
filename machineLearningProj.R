@@ -37,19 +37,84 @@ transformStrings <- function(xs) {
 
 #nsv <- nearZeroVar(trainingData, saveMetrics = TRUE)
 #train <- trainingData[,t(nsv[4])]
-
- 
-cleanData <- function(data) {
-  data <- mutate(data, classe = as.factor(classe), new_window = as.factor(new_window))
-  numCols = ncol(data)
-  data1 = data[,1:6]
-  data2 = data.frame(sapply(7:numCols, function(i) { transformStrings(data[,i])}))
-  names = names(data)
-  names(data2) <- names[7:numCols]
-  res = cbind(data1,data2)  
-  nsv <- nearZeroVar(res, saveMetrics = TRUE)
-  res[,t(nsv[4])]  
+hasNoNulls <- function(data) {
+  nas = is.na(data)
+  sum(nas) == 0
 }
+
+validCol <- function(data) {
+  (is.numeric(data) || is.ordered(data) || is.factor(data)) && hasNoNulls(data)
+}
+
+validCols <- function(train) { 
+  sapply(1:ncol(train) , function(i) { validCol(train[,i])} )
+}
+
+cleanCol <- function(data) {
+   data <- as.numeric(data)  
+   data
+} 
+
+cleanCols <- function(train) {
+  res <- mutate(train, 
+        X = cleanCol(X),
+        raw_timestamp_part_1 = cleanCol(raw_timestamp_part_1),
+        raw_timestamp_part_2 = cleanCol(raw_timestamp_part_2),
+        num_window = cleanCol(num_window),
+        total_accel_belt = cleanCol(total_accel_belt),
+        accel_belt_x = cleanCol(accel_belt_x),
+        accel_belt_y = cleanCol(accel_belt_y),
+        accel_belt_z = cleanCol(accel_belt_z),
+        magnet_belt_x = cleanCol(magnet_belt_x),
+        magnet_belt_y = cleanCol(magnet_belt_y),
+        magnet_belt_z = cleanCol(magnet_belt_z),
+        accel_arm_x = cleanCol(accel_arm_x),
+        accel_arm_y = cleanCol(accel_arm_y),
+        accel_arm_z = cleanCol(accel_arm_z),
+        magnet_arm_x = cleanCol(magnet_arm_x),
+        magnet_arm_y = cleanCol(magnet_arm_y),
+        magnet_arm_z = cleanCol(magnet_arm_z),
+        total_accel_dumbbell = cleanCol(total_accel_dumbbell),
+        accel_dumbbell_x = cleanCol(accel_dumbbell_x),
+        accel_dumbbell_y = cleanCol(accel_dumbbell_y),
+        accel_dumbbell_z = cleanCol(accel_dumbbell_z),
+        magnet_dumbbell_x = cleanCol(magnet_dumbbell_x),
+        magnet_dumbbell_y = cleanCol(magnet_dumbbell_y),
+        total_accel_forearm = cleanCol(total_accel_forearm),
+        accel_forearm_x = cleanCol(accel_forearm_x),
+        accel_forearm_y = cleanCol(accel_forearm_y),
+        accel_forearm_z = cleanCol(accel_forearm_z))
+  res
+}
+
+cleanData <- function(data) {
+  #data <- mutate(data, classe = as.factor(classe), new_window = as.factor(new_window))
+  valid <- validCols(data)
+  #numCols = ncol(data)
+  #data1 = data[,1:6]
+  #data2 = data.frame(sapply(7:numCols, function(i) { transformStrings(data[,i])}))
+  #names = names(data)
+  #names(data2) <- names[7:numCols]
+  data <- data[,valid] # ind(data1,data2)    
+  #dims <- dim(data)
+  names <- names(data)
+  data <- cleanCols(data)
+  names(data) <- names
+  #dim(data) <- dims
+  #names(data) <- names
+  data
+}
+
+set.seed(31415)
+training = createDataPartition(trainSet$classe, p = 0.5, list=FALSE)
+train = trainSet[training,]
+test = trainSet[-training,]
+class = as.numeric(factor(train$classe, labels = c("1","2","3","4","5"))) 
+train = cleanData(train)
+
+
+
+
 
 
 

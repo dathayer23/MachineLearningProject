@@ -105,13 +105,27 @@ cleanData <- function(data) {
   data
 }
 
+model <- NULL
+accuracy <- NULL
+pred <- NULL
+
+trainAndPredict <- function(train, test, methodUsed) {
+  class = as.numeric(factor(train$classe, labels = c("1","2","3","4","5"))) 
+  testclass = as.numeric(factor(test$classe, labels = c("1","2","3","4","5")))
+  train = cleanData(train)
+  test = cleanData(test)
+  model <<- train(x = train, y = class, preProcess="pca", method = methodUsed)
+  pred <<- round(predict(model, test))
+  mismatches = (testclass - pred) != 0
+  accuracy <<- 1.0 - sum(mismatches)/length(testclass)
+}
+
 set.seed(31415)
 training = createDataPartition(trainSet$classe, p = 0.5, list=FALSE)
 train = trainSet[training,]
 test = trainSet[-training,]
-class = as.numeric(factor(train$classe, labels = c("1","2","3","4","5"))) 
-train = cleanData(train)
 
+trainAndPredict(train,test, "glm")
 
 
 

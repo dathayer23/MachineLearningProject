@@ -1,0 +1,219 @@
+---
+title: "Practical Machine Learning Write Up"
+author: "David Thayer"
+date: "Saturday, April 25, 2015"
+output: html_document
+---
+
+This document outlines the methedology and work I conducted to creeate a machine larnng model to predict the class of activity from data collected by sensors.  This data  is collected from the website  http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset). An examination of the data using the R command str shows that many of the columns have significant portions of the data that isnot present.  It appears that there are two classes of columns one which has a value collected at every sample and one which has a value collected at widely dispersed intervals. Taking the data columns with complete data and performing a Principle Components Analysis we were able to create a K- Nearest Neighbor model that had a greater than 97% accuracy.  
+
+First let us discuss the use of two types of prediction, regression and classification.  In regression we find a model that calculates a number that matches a target number.  In classification we present a number of choices called classes and the model learns how to choose the class that matches the target. In my source Code I have created two functions One called 'trainAndValidateRegression' and 'trainAndValidateCalssification'.  Th only difference between the two functions is that the 'classe' data column is converted to a number in the regression function and converted into a factor in the classification function.  In the classification function we can take the output as is however in the regression style models we need to round the output to the nearest integer.  We also take predictions that are less than the lowest numbered class to 1 and the highest numbered class to 5.  
+
+ For preprocessing we  do scaling, centering, and pca analysis.  During training we specify 10 fold cross validation.  We built a model from reg=ression and classification methodology using the methods, "glm", "knn", "gbm", "svmr".
+ 
+ Below I present the results for each model built.  First I present the confusion matrix for each model and then I give the output from predicting the testdata.
+
+# K-Nearest Neighbor using Regression
+Confusion Matrix and Statistics
+
+                  Reference            
+        Prediction    0    1    2    3    4    5
+                      0    1    0    0    0    0    0
+                      1    0 1100   14    2    0    0
+                      2    0   10  727   21    1    0
+                      3    0    0    9  662   13    0
+                      4    0    0    1   17  622    3
+                      5    0    0    0    0   15  706
+                
+  Overall Statistics
+                                          
+               Accuracy : 0.973           
+                 95% CI : (0.9674, 0.9778)
+    No Information Rate : 0.2829          
+    P-Value [Acc > NIR] : < 2.2e-16       
+                                          
+                  Kappa : 0.9658     
+
+                      Class: 0 Class: 1 Class: 2 Class: 3 Class: 4 Class: 5                                            
+        Sensitivity  1.0000000   0.9910   0.9680   0.9430   0.9555   0.9958
+        Specificity  1.0000000   0.9943   0.9899   0.9932   0.9936   0.9953
+
+## Predicted  Outcomes
+KNN-Regression output = [ 2 1 1 1 1 3 3 2 1 1 2 2 2 1 5 3 1 2 2 2 ]
+
+# K-Nearest Neighbor using Classification
+ Confusion Matrix and Statistics
+
+                Reference
+      Prediction    A    B    C    D    E
+                 A 1107    4    4    1    0
+                 B   12  728   18    1    0
+                 C    1    8  662   13    0
+                 D    0    0   14  626    3
+                 E    0    0    1    6  714
+                 
+Overall Statistics
+                                         
+               Accuracy : 0.9781         
+                 95% CI : (0.973, 0.9824)
+    No Information Rate : 0.2855         
+    P-Value [Acc > NIR] : < 2.2e-16      
+                                         
+                  Kappa : 0.9723         
+                  
+                  
+                           Class: A Class: B Class: C Class: D Class: E
+      Sensitivity            0.9884   0.9838   0.9471   0.9675   0.9958
+      Specificity            0.9968   0.9903   0.9932   0.9948   0.9978         
+ 
+## Predicted Outcomes
+ KNN-Classification output = [ B A A A A C D B A A B A B A E E A B B B ]
+ 
+# Generalized Linear Model using regression
+ Confusion Matrix and Statistics
+
+               Reference
+      Prediction    0    1    2    3    4    5
+               0    1    0    0    0    0    0
+               1    0 1115    1    0    0    0
+               2    0    0  741   18    0    0
+               3    0    0    0  684    0    0
+               4    0    0    0    5  631    7
+               5   26    0    0    0   41  654
+
+Overall Statistics
+                                          
+               Accuracy : 0.975           
+                 95% CI : (0.9696, 0.9797)
+    No Information Rate : 0.2841          
+    P-Value [Acc > NIR] : < 2.2e-16       
+                                          
+                  Kappa : 0.9685    
+                  
+                           Class: 0 Class: 1 Class: 2 Class: 3 Class: 4 Class: 5
+      Sensitivity          0.0370370   1.0000   0.9987   0.9675   0.9390   0.9894
+      Specificity          1.0000000   0.9996   0.9943   1.0000   0.9963   0.9795
+## Predictied Outcomes
+GLM-Regression output = [ 1 0 0 1 1 0 0 1 0 0 0 0 1 0 0 1 1 0 1 0 ]
+
+# Generalized Linear Model using classification
+Although the glm method is listed in the caret documentation as being a dual use methed, i.e. used for bothe regression and classification I was not able to get the method to work using the classification technique.
+
+# Stochastic Gradient Boosting using Regression 
+Confusion Matrix and Statistics
+
+                Reference
+      Prediction   0   1   2   3   4   5
+               0   1   0   0   0   0   0
+               1   0 939 175   2   0   0
+               2   0  11 626 122   0   0
+               3   0   0  63 560  61   0
+               4   0   0   0 132 459  52
+               5   4   0   0   1 215 501
+
+Overall Statistics
+                                          
+               Accuracy : 0.7864          
+                 95% CI : (0.7733, 0.7992)
+    No Information Rate : 0.2421          
+    P-Value [Acc > NIR] : < 2.2e-16       
+                                          
+                  Kappa : 0.7316          
+                            Class: 0 Class: 1 Class: 2 Class: 3 Class: 4 Class: 5
+      Sensitivity          0.2000000   0.9884   0.7245   0.6854   0.6245   0.9060
+      Specificity          1.0000000   0.9405   0.9565   0.9601   0.9423   0.9347
+## Predicted Outcomes
+GBM-Regression output = [ 1 1 1 0 1 1 1 1 1 1 1 1 1 1 2 2 1 2 1 2 ]
+
+# Stochastic Gradient Boosting using Classification 
+Confusion Matrix and Statistics
+
+                Reference
+      Prediction    A    B    C    D    E
+               A 1091   24    1    0    0
+               B   57  655   46    1    0
+               C    1   27  644    8    4
+               D    0    2   73  556   12
+               E    0    4    3   21  693
+
+Overall Statistics
+                                         
+               Accuracy : 0.9276         
+                 95% CI : (0.919, 0.9355)
+    No Information Rate : 0.2929         
+    P-Value [Acc > NIR] : < 2.2e-16      
+                                         
+                  Kappa : 0.9083         
+
+                           Class: A Class: B Class: C Class: D Class: E
+      Sensitivity            0.9495   0.9199   0.8396   0.9488   0.9774
+      Specificity            0.9910   0.9676   0.9873   0.9739   0.9913
+
+## Predicted Outcomes
+GBM-Classification output = [ A A A A A A A B A A A A B A A B A B A B ]
+
+# Support Vector Machines with Radial Basis Function Kernel using regression
+Confusion Matrix and Statistics
+
+                Reference
+      Prediction    0    1    2    3    4    5
+               0    1    0    0    0    0    0
+               1    0 1115    1    0    0    0
+               2    0    0  759    0    0    0
+               3    0    0    0  684    0    0
+               4    0    0    0    0  643    0
+               5    0    0    0    0    0  721
+
+Overall Statistics
+                                     
+               Accuracy : 0.9997     
+                 95% CI : (0.9986, 1)
+    No Information Rate : 0.2841     
+    P-Value [Acc > NIR] : < 2.2e-16  
+                                     
+                  Kappa : 0.9997     
+                  
+                            Class: 0 Class: 1 Class: 2 Class: 3 Class: 4 Class: 5                      
+      Sensitivity          1.0000000   1.0000   0.9987   1.0000   1.0000   1.0000
+      Specificity          1.0000000   0.9996   1.0000   1.0000   1.0000   1.0000 
+
+## Predicted Outcomes
+
+SVM-Regression output = [ 1 0 0 1 1 1 1 1 1 0 0 0 1 0 1 1 1 1 1 1 ]
+
+# Support Vector Machines with Radial Basis Function Kernel using classification
+Confusion Matrix and Statistics
+
+                Reference
+      Prediction    A    B    C    D    E
+               A 1116    0    0    0    0
+               B    0  759    0    0    0
+               C    0    0  684    0    0
+               D    0    0    0  643    0
+               E    0    0    0    0  721
+
+Overall Statistics
+                                     
+               Accuracy : 1          
+                 95% CI : (0.9991, 1)
+    No Information Rate : 0.2845     
+    P-Value [Acc > NIR] : < 2.2e-16  
+                                     
+                  Kappa : 1          
+                  
+                           Class: A Class: B Class: C Class: D Class: E
+      Sensitivity            1.0000   1.0000   1.0000   1.0000   1.0000
+      Specificity            1.0000   1.0000   1.0000   1.0000   1.0000
+
+## Predicted Outcomes
+
+SVM-Classification output = [ A A A A A A A A A A A A A A A A A A A A ]
+
+# Conclusions
+Given the above accuracies and confusion matrices all thewse models appear to be somewhat equivalent except for the 'Stochastic Gradient Boosting using Regression' model.  Examining the results when run on the testdata given to us all the models were dissapointng except for the 'K-Nearest Neighbor using Classification' model and the 'K-Nearest Neighbor using Regression' model.  Choosing which models predictions to present was difficult since they were indentical in almost all respects.
+
+Both of these models had accuracies that were above 97% using 10-fold cross validation.  Assuming there is a certain amount of overfitting I would estimate the out of sample accuracy at around 90%.  
+
+
+Eventually I submitted both models and both models got 70% of the test data correct.  This means that there was more overfitting than I had thought.  If I had , had more time I thin I would have gone back and rerun all the models with a PCA threshold of 80% instead of 95% to get a looser fit of the training data.
+

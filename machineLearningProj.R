@@ -1,6 +1,26 @@
-library(dplyr)
-library(caret)
-library(kernlab)
+packages <- installed.packages()
+packages <- packages[,1]
+
+need <- function(lib) {
+  if (require(lib)) {
+    sprintf("Library %s is resident", lib)    
+  }
+  else {
+    install.packages(lib)    
+  }
+}
+
+require("dplyr")
+require("caret")
+require("kernlab")
+require("e1701")
+require("gbm")
+
+#library(dplyr)
+#library(caret)
+#library(kernlab)
+#library(e1071)
+#library(gbm)
 
 print("Load Training and Test Data")
 trainSet <- read.csv("pml-training.csv", header = TRUE, stringsAsFactors = FALSE)
@@ -172,7 +192,7 @@ relabelOutput <- function(data) {
   out
 }
 
-createModels <- function() {
+
 print("Create Data partitions for training and validation")
 set.seed(31415)
 training = createDataPartition(trainSet$classe, p = 0.8, list=FALSE)
@@ -209,18 +229,20 @@ seeds2 = list(
   167)
 
 print("Set training control parameters using method 'cv' with 10 folds and sampling freq of 0.75")
-trCtrl <- trainControl(method = "cv", number = 10, seeds = seeds2, p = 0.75, returnResamp="all", savePredictions=TRUE)
+trCtrl <- trainControl(method = "cv", preProcOptions = list(thresh = 0.80), number = 10, seeds = seeds2, p = 0.75, returnResamp="none", savePredictions=FALSE)
 
 # generalized linear model using regression
-print("Train Generalized linear model using regression.")
-
-glmrConfusion <- getConfusionMatrix(testclass, glmrPreds)
-glmrAccuracy <- accuracy
-sprintf("Generalized linear model using regression validation accuracy = %f", glmrAccuracy)
-glmrPreds <- pred
-glmrModel
-print("Generalized linear model using regression Confusion Matrix")
-print(glmrConfusion)
+createGlmRegressionModel <- function(){
+  print("Train Generalized linear model using regression.")
+  glmrModel <<- trainAndValidateRegression(traindata,testdata, "glm", trCtrl, c("center", "scale", "pca"))
+  glmrPreds <<- pred
+  glmrConfusion <<- getConfusionMatrix(testclass, glmrPreds)
+  glmrAccuracy <<- accuracy
+  sprintf("Generalized linear model using regression validation accuracy = %f", glmrAccuracy)
+  glmrModel
+  print("Generalized linear model using regression Confusion Matrix")
+  print(glmrConfusion)
+}
 
 # generalized linear model using classification
 # this model was unable to use classification without throwing an error 
@@ -234,72 +256,108 @@ print(glmrConfusion)
 #glmcConfusion
 
 # K-Nearest Neighbors using regression
-print ("Train K-Nearest Neighbors using regression.")
-knnrModel <- trainAndValidateRegression(traindata,testdata, "knn", trCtrl, c("center", "scale", "pca"))
-knnrConfusion <- getConfusionMatrix(testclass, knnrPreds)
-knnrAccuracy <- accuracy
-sprintf("K-Nearest Neighbors using regression validation accuracy = %f", knnrAccuracy)
-knnrPreds <- pred
-knnrModel
-print("K-Nearest Neighbors using regression Confusion Matrix")
-print(knnrConfusion)
-
+createKnnRegressionModel <- function(){
+  print ("Train K-Nearest Neighbors using regression.")
+  knnrModel <<- trainAndValidateRegression(traindata,testdata, "knn", trCtrl, c("center", "scale", "pca"))
+  knnrPreds <<- pred
+  knnrConfusion <<- getConfusionMatrix(testclass, knnrPreds)
+  knnrAccuracy <<- accuracy
+  sprintf("K-Nearest Neighbors using regression validation accuracy = %f", knnrAccuracy)
+  knnrModel
+  print("K-Nearest Neighbors using regression Confusion Matrix")
+  print(knnrConfusion)
+}
 # K-Nearest Neighbors using classification
-print ("Train K-Nearest Neighbors using classification")
-knncModel <- trainAndValidateClassification(traindata,testdata, "knn", trCtrl, c("center", "scale", "pca"))
-knncConfusion <- confusionMatrix(testclass, knncPreds)
-knncAccuracy <- accuracy
-sprintf("K-Nearest Neighbors using classification validation accuracy  = %f", knncAccuracy)
-knncPreds <- pred
-knncModel
-print("K-Nearest Neighbors using classification Confusion Matrix")
-print(knncConfusion)
+createKnnClassificationModel <- function(){
+  print ("Train K-Nearest Neighbors using classification")
+  knncModel <<- trainAndValidateClassification(traindata,testdata, "knn", trCtrl, c("center", "scale", "pca"))
+  knncPreds <<- pred
+  knncConfusion <<- confusionMatrix(testclass, knncPreds)
+  knncAccuracy <<- accuracy
+  sprintf("K-Nearest Neighbors using classification validation accuracy  = %f", knncAccuracy)
+  knncModel
+  print("K-Nearest Neighbors using classification Confusion Matrix")
+  print(knncConfusion)
+}
+
 
 # Stochastic Gradient Boosting using Regression
-print("Train Stochastic Gradient Boosting using Regression.")
-gbmrModel <- trainAndValidateRegression(traindata,testdata, "gbm", trCtrl, c("center", "scale", "pca"))
-gbmrConfusion <- getConfusionMatrix(testclass, gbmrPreds)
-gbmrAccuracy <- accuracy
-sprintf("Stochastic Gradient Boosting using Regression validation accuracy = %f", gbmrAccuracy)
-gbmrPreds <- pred
-gbmrModel
-print("Stochastic Gradient Boosting using Regression Confusion Matrix")
-print(gbmrConfusion)
+createGbmRegressionModel <- function(){
+  print("Train Stochastic Gradient Boosting using Regression.")
+  gbmrModel <<- trainAndValidateRegression(traindata,testdata, "gbm", trCtrl, c("center", "scale", "pca"))
+  gbmrPreds <<- pred
+  gbmrConfusion <<- getConfusionMatrix(testclass, gbmrPreds)
+  gbmrAccuracy <<- accuracy
+  sprintf("Stochastic Gradient Boosting using Regression validation accuracy = %f", gbmrAccuracy)
+  gbmrModel
+  print("Stochastic Gradient Boosting using Regression Confusion Matrix")
+  print(gbmrConfusion)
+}
 
 # Stochastic Gradient Boosting using Classification
+createGbmClassificationModel <- function(){
 print("Train Stochastic Gradient Boosting using Classification.")
-gbmcModel <- trainAndValidateClassification(traindata,testdata, "gbm", trCtrl, c("center", "scale", "pca"))
-gbmcConfusion <- confusionMatrix(testclass, gbmcPreds)
-gbmcAccuracy <- accuracy
+gbmcModel <<- trainAndValidateClassification(traindata,testdata, "gbm", trCtrl, c("center", "scale", "pca"))
+gbmcPreds <<- pred
+gbmcConfusion <<- confusionMatrix(testclass, gbmcPreds)
+gbmcAccuracy <<- accuracy
 sprintf("Stochastic Gradient Boosting using Classification validation accuracy = %f", gbmcAccuracy)
-gbmcPreds <- pred
 gbmcModel
 print("Stochastic Gradient Boosting using classification Confusion Matrix")
 print(gbmcConfusion)
-
+}
 
 # Support Vector Machines with Radial Basis Function Kernel using regression
-print("Train Support Vector Machines with Radial Basis Function Kernel using regression.")
-svmrModel <- trainAndValidateRegression(traindata,testdata, "svmRadial", trCtrl, c("center", "scale", "pca"))
-svmrConfusion <- getConfusionMatrix(testclass, svmrPreds)
-svmrAccuracy <- accuracy
-sprintf("Support Vector Machines with Radial Basis Function Kernel using regression validation accuracy = %f", svmrAccuracy)
-svmrPreds <- pred
-svmrModel
-print("Support Vector Machines with Radial Basis Function Kernel using regression Confusion Matrix")
-print(svmrConfusion)
+createSvmRegressionModel <- function(){
+  print("Train Support Vector Machines with Radial Basis Function Kernel using regression.")
+  svmrModel <<- trainAndValidateRegression(traindata,testdata, "svmRadial", trCtrl, c("center", "scale", "pca"))
+  svmrPreds <<- pred
+  svmrConfusion <<- getConfusionMatrix(testclass, svmrPreds)
+  svmrAccuracy <<- accuracy
+  sprintf("Support Vector Machines with Radial Basis Function Kernel using regression validation accuracy = %f", svmrAccuracy)
+  svmrModel
+  print("Support Vector Machines with Radial Basis Function Kernel using regression Confusion Matrix")
+  print(svmrConfusion)
+}
 
 # Support Vector Machines with Radial Basis Function Kernel using classification
-print("Train Support Vector Machines with Radial Basis Function Kernel using classification.")
-svmcModel <- trainAndValidateClassification(traindata,testdata, "svmRadial", trCtrl, c("center", "scale", "pca"))
-svmcConfusion <- confusionMatrix(testclass, svmcPreds)
-svmcAccuracy <- accuracy
-sprintf("Support Vector Machines with Radial Basis Function Kernel using classification validation accuracy = %f", svmcAccuracy)
-svmcPreds <- pred
-svmcModel
-print("Support Vector Machines with Radial Basis Function Kernel using classification Confusion Matrix")
-print(svmcConfusion)
+createSvmClassificationModel <- function(){
+  print("Train Support Vector Machines with Radial Basis Function Kernel using classification.")
+  svmcModel <<- trainAndValidateClassification(traindata,testdata, "svmRadial", trCtrl, c("center", "scale", "pca"))
+  svmcPreds <<- pred
+  svmcConfusion <<- confusionMatrix(testclass, svmcPreds)
+  svmcAccuracy <<- accuracy
+  sprintf("Support Vector Machines with Radial Basis Function Kernel using classification validation accuracy = %f", svmcAccuracy)
+  svmcModel
+  print("Support Vector Machines with Radial Basis Function Kernel using classification Confusion Matrix")
+  print(svmcConfusion)
 }
+
+#glmrModel = NULL
+#knnrModel = NULL
+#gbmrModel = NULL
+#svmrModel = NULL
+#knncModel = NULL
+#gbmcModel = NULL
+#svmcModel = NULL
+
+buildAllModels <- function() {
+  createGlmRegressionModel()
+  createKnnRegressionModel()
+  createKnnClassificationModel()
+  createGbmRegressionModel()
+  createGbmClassificationModel()
+  createSvmRegressionModel()
+  createSvmClassificationModel()
+}
+
+glmrOutput = NULL
+knnrOutput = NULL
+gbmrOutput = NULL
+svmrOutput = NULL
+knncOutput = NULL
+gbmcOutput = NULL
+svmcOutput = NULL
 
 predictOutcomes <- function() {
   #use various models to classify final test data read from pml-testing.csv
@@ -309,26 +367,26 @@ predictOutcomes <- function() {
   td <- testdata[,1:ncol(testdata) - 1]
 
   # apply regression based models
-  glmrOutput <- round(predict(glmrModel, td))
+  glmrOutput <<- round(predict(glmrModel, td))
   cat("GLM-Regression output = [", glmrOutput, "]")
   print("")
-  knnrOutput <- round(predict(knnrModel, td))
+  knnrOutput <<- round(predict(knnrModel, td))
   cat("KNN-Regression output = [", knnrOutput, "]")
   print("")
-  gbmrOutput <- round(predict(gbmrModel, td))
+  gbmrOutput <<- round(predict(gbmrModel, td))
   cat("GBM-Regression output = [", gbmrOutput, "]")
   print("")
-  svmrOutput <- round(predict(svmrModel, td))
+  svmrOutput <<- round(predict(svmrModel, td))
   cat("SVM-Regression output = [", svmrOutput, "]")
   print("")
   #apply classificatipon based models
-  knncOutput <- predict(knncModel, td)
+  knncOutput <<- predict(knncModel, td)
   cat("KNN-Classification output = [", as.character(knncOutput), "]")
   print("")
-  gbmcOutput <- predict(gbmcModel, td)
+  gbmcOutput <<- predict(gbmcModel, td)
   cat("GBM-Classification output = [", as.character(gbmcOutput), "]")
   print("")
-  svmcOutput <- predict(svmcModel, td)
+  svmcOutput <<- predict(svmcModel, td)
   cat("SVM-Classification output = [", as.character(svmcOutput), "]")
   print("")
 }
